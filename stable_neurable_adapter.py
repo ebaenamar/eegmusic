@@ -164,9 +164,16 @@ class StableNeurableAdapter:
     def calculate_stable_tempo(self, arousal: float, left_beta: float) -> float:
         """
         Calculate tempo with stability (smooth transitions).
+        Uses Beta directly for more dramatic differences.
         """
-        # Base tempo from arousal
-        base_tempo = 70 + arousal * 80  # 70-150 BPM range
+        # Base tempo from BETA (motor cortex activity) - more direct mapping
+        # This creates more obvious differences between states
+        if left_beta > 0.35:
+            base_tempo = 110 + (left_beta - 0.35) * 100  # 110-140 BPM (active)
+        elif left_beta > 0.20:
+            base_tempo = 90 + (left_beta - 0.20) * 133   # 90-110 BPM (moderate)
+        else:
+            base_tempo = 60 + left_beta * 150            # 60-90 BPM (relaxed)
         
         # Modulation from left hemisphere beta
         beta_modulation = 1.0 + (left_beta - 0.2) * 0.3  # ±30% max
@@ -218,6 +225,11 @@ class StableNeurableAdapter:
             right_val = right_smooth[band] * right_smooth['signal_quality']
             combined_bands[band] = (left_val + right_val) / 2
         
+        # Calculate Low/High frequency ratio for density/sparsity
+        low_freq = (combined_bands['delta'] + combined_bands['theta']) / 2
+        high_freq = (combined_bands['beta'] + combined_bands['gamma']) / 2
+        low_high_ratio = low_freq / (high_freq + 0.01)
+        
         # Musical parameters
         params = {
             # Core dimensions
@@ -234,6 +246,9 @@ class StableNeurableAdapter:
             'melody_complexity': right_smooth['alpha'] * 0.7,  # Reduced complexity
             'harmony': (right_smooth['alpha'] + right_smooth['gamma']) / 2,
             'brightness': right_smooth['gamma'],
+            
+            # Synesthetic parameters
+            'low_high_ratio': low_high_ratio,  # For density/sparsity
             
             # Scale and structure
             'scale': scale,

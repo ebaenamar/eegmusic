@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠🎵 EEG Music Generator - Pixel Dashboard</title>
+    <link rel="stylesheet" href="pixel_style.css">
+</head>
+<body>
+    <div class="scanlines"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🧠🎵 EEG MUSIC GENERATOR</h1>
+            <div class="subtitle">NEURABLE 12-CH COMPATIBLE • PIXEL EDITION v2.0</div>
+        </div>
+        
+        <div class="grid">
+            <!-- LEFT COLUMN -->
+            <div>
+                <!-- SOURCE SELECTION -->
+                <div class="panel">
+                    <div class="panel-title">⚡ DATA SOURCE</div>
+                    
+                    <div class="source-selector">
+                        <button class="source-btn active" id="btn-csv-source">📁 CSV FILE</button>
+                        <button class="source-btn" id="btn-url-source">🌐 NEURABLE URL</button>
+                    </div>
+                    
+                    <!-- CSV SOURCE -->
+                    <div id="csv-source-panel">
+                        <div class="input-group">
+                            <label>SELECT CSV FILE:</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="csv-file-input" accept=".csv">
+                                <label for="csv-file-input" class="file-input-label">CLICK TO LOAD FILE</label>
+                            </div>
+                            <div class="file-name" id="csv-file-name">No file selected</div>
+                        </div>
+                    </div>
+                    
+                    <!-- URL SOURCE -->
+                    <div id="url-source-panel" style="display: none;">
+                        <div class="input-group">
+                            <label>WEBSOCKET URL:</label>
+                            <input type="text" id="ws-url" value="wss://stream2.mindfulmakers.xyz">
+                        </div>
+                        <div class="status-bar">
+                            <div class="status-item">
+                                <div class="status-dot" id="ws-status-dot"></div>
+                                <span id="ws-status-text">DISCONNECTED</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MUSIC CONFIG -->
+                <div class="panel">
+                    <div class="panel-title">🎛️ MUSIC CONFIG</div>
+                    
+                    <div class="input-group">
+                        <label>SMOOTHING: <span class="value-display" id="smoothing-value">15</span></label>
+                        <input type="range" id="smoothing-slider" min="5" max="30" value="15">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>TEMPO STABILITY: <span class="value-display" id="tempo-value">0.85</span></label>
+                        <input type="range" id="tempo-slider" min="0.5" max="0.95" value="0.85" step="0.05">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>DURATION: <span class="value-display" id="duration-value">6.0</span> SEC</label>
+                        <input type="range" id="duration-slider" min="3" max="10" value="6" step="0.5">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>BASE SCALE:</label>
+                        <select id="base-scale-select">
+                            <option value="auto" selected>AUTO (FROM EEG)</option>
+                            <option value="major">MAJOR</option>
+                            <option value="minor">MINOR</option>
+                            <option value="pentatonic">PENTATONIC</option>
+                            <option value="blues">BLUES</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>PRESET:</label>
+                        <select id="preset-select">
+                            <option value="custom">CUSTOM</option>
+                            <option value="meditation">MEDITATION (VERY STABLE)</option>
+                            <option value="balanced" selected>BALANCED</option>
+                            <option value="responsive">RESPONSIVE</option>
+                            <option value="dynamic">DYNAMIC (MAX VARIETY)</option>
+                            <option value="ultra">ULTRA (EXTREME CHANGES)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- CONTROLS -->
+                <div class="panel">
+                    <div class="panel-title">🎮 CONTROLS</div>
+                    
+                    <div class="control-buttons">
+                        <button class="btn btn-start" id="btn-start">▶ START</button>
+                        <button class="btn btn-stop" id="btn-stop">⏹ STOP</button>
+                    </div>
+                    
+                    <div class="status-bar">
+                        <div class="status-item">
+                            <div class="status-dot" id="playback-status-dot"></div>
+                            <span id="playback-status-text">STOPPED</span>
+                        </div>
+                        <div class="status-item">
+                            <span>SOURCE: <span id="active-source">NONE</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RIGHT COLUMN -->
+            <div>
+                <!-- OSCILLOSCOPE -->
+                <div class="panel">
+                    <div class="panel-title">📊 EEG OSCILLOSCOPE</div>
+                    <div class="oscilloscope">
+                        <canvas id="oscilloscope-canvas"></canvas>
+                    </div>
+                    <div class="status-bar">
+                        <span>SAMPLES: <span id="sample-count">0</span></span>
+                        <span>RATE: <span id="sample-rate">0</span> Hz</span>
+                    </div>
+                </div>
+                
+                <!-- MUSICAL PARAMETERS -->
+                <div class="panel">
+                    <div class="panel-title">🎵 MUSICAL STATE</div>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <div class="metric-label">TEMPO</div>
+                            <div class="metric-value" id="metric-tempo">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">SCALE</div>
+                            <div class="metric-value" id="metric-scale">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">AROUSAL</div>
+                            <div class="metric-value" id="metric-arousal">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">VALENCE</div>
+                            <div class="metric-value" id="metric-valence">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">ENERGY</div>
+                            <div class="metric-value" id="metric-energy">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">QUALITY</div>
+                            <div class="metric-value" id="metric-quality">--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BRAIN ACTIVITY -->
+                <div class="panel">
+                    <div class="panel-title">🧠 BRAIN ACTIVITY</div>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <div class="metric-label">DELTA</div>
+                            <div class="metric-value" id="band-delta">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">THETA</div>
+                            <div class="metric-value" id="band-theta">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">ALPHA</div>
+                            <div class="metric-value" id="band-alpha">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">BETA</div>
+                            <div class="metric-value" id="band-beta">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">GAMMA</div>
+                            <div class="metric-value" id="band-gamma">--</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">FOCUS</div>
+                            <div class="metric-value" id="cognitive-focus">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="pixel_dashboard.js"></script>
+</body>
+</html>
