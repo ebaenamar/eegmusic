@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠🎵 Brainwave Music Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .status-card {
+            flex: 1;
+            min-width: 200px;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .status-card.connected {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .status-card.disconnected {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .status-card.music {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .status-card h3 {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .status-card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        select, input[type="range"] {
+            padding: 10px;
+            border: 2px solid #ced4da;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .brainwave-bars {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .wave-bar {
+            text-align: center;
+        }
+
+        .wave-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .wave-meter {
+            height: 150px;
+            background: #e9ecef;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wave-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            transition: height 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .wave-value {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .music-params {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .param-card {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .param-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .param-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .playing {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠🎵 Brainwave Music Generator</h1>
+            <p class="subtitle">Transform your brain activity into beautiful music</p>
+        </header>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-card disconnected" id="connectionStatus">
+                <h3>Connection</h3>
+                <div class="value" id="connectionText">Disconnected</div>
+            </div>
+            <div class="status-card music" id="musicStatus">
+                <h3>Music Status</h3>
+                <div class="value" id="musicText">Stopped</div>
+            </div>
+            <div class="status-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                <h3>Samples Processed</h3>
+                <div class="value" id="samplesCount">0</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="csvFile">Select EEG Data File:</label>
+                <select id="csvFile">
+                    <option value="/Users/e.baena/CascadeProjects/test_eeg_data.csv">test_eeg_data.csv</option>
+                    <option value="/Users/e.baena/Desktop/SUNDAI_STUFF/EEG Counter/Feautres/eeg_metrics.csv">eeg_metrics.csv</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="scale">Musical Scale:</label>
+                <select id="scale">
+                    <option value="pentatonic">Pentatonic (Peaceful)</option>
+                    <option value="major">Major (Happy)</option>
+                    <option value="minor">Minor (Melancholic)</option>
+                    <option value="blues">Blues (Soulful)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="baseFreq">Base Frequency: <span id="freqValue">220 Hz</span></label>
+                <input type="range" id="baseFreq" min="110" max="440" value="220" step="10">
+            </div>
+
+            <div class="control-group" style="display: flex; gap: 10px; align-items: flex-end;">
+                <button class="btn-start" onclick="startMusic()">▶ Start Music</button>
+                <button class="btn-stop" onclick="stopMusic()">⏹ Stop</button>
+                <button class="btn-save" onclick="saveSession()">💾 Save</button>
+            </div>
+        </div>
+
+        <!-- Brainwave Bands -->
+        <div class="brainwave-bars">
+            <div class="wave-bar">
+                <div class="wave-label">Delta (0.5-4 Hz)</div>
+                <div class="wave-meter">
+                    <div class="wave-fill" id="deltaBar" style="background: linear-gradient(to top, #FF6B6B, #FF8E8E);"></div>
+                </div>
+                <div class="wave-value" id="deltaValue">0%</div>
+            </div>
+            <div class="wave-bar">
+                <div class="wave-label">Theta (4-8 Hz)</div>
+                <div class="wave-meter">
+                    <div class="wave-fill" id="thetaBar" style="background: linear-gradient(to top, #4ECDC4, #6FE3DA);"></div>
+                </div>
+                <div class="wave-value" id="thetaValue">0%</div>
+            </div>
+            <div class="wave-bar">
+                <div class="wave-label">Alpha (8-13 Hz)</div>
+                <div class="wave-meter">
+                    <div class="wave-fill" id="alphaBar" style="background: linear-gradient(to top, #45B7D1, #67C9E3);"></div>
+                </div>
+                <div class="wave-value" id="alphaValue">0%</div>
+            </div>
+            <div class="wave-bar">
+                <div class="wave-label">Beta (13-30 Hz)</div>
+                <div class="wave-meter">
+                    <div class="wave-fill" id="betaBar" style="background: linear-gradient(to top, #96CEB4, #B0DCC6);"></div>
+                </div>
+                <div class="wave-value" id="betaValue">0%</div>
+            </div>
+            <div class="wave-bar">
+                <div class="wave-label">Gamma (30-50 Hz)</div>
+                <div class="wave-meter">
+                    <div class="wave-fill" id="gammaBar" style="background: linear-gradient(to top, #FECA57, #FED976);"></div>
+                </div>
+                <div class="wave-value" id="gammaValue">0%</div>
+            </div>
+        </div>
+
+        <!-- Music Parameters -->
+        <div class="music-params">
+            <div class="param-card">
+                <div class="param-label">🎸 Energy</div>
+                <div class="param-value" id="energyParam">0.0</div>
+            </div>
+            <div class="param-card">
+                <div class="param-label">🎼 Melody</div>
+                <div class="param-value" id="melodyParam">0.0</div>
+            </div>
+            <div class="param-card">
+                <div class="param-label">🥁 Tempo</div>
+                <div class="param-value" id="tempoParam">0 BPM</div>
+            </div>
+            <div class="param-card">
+                <div class="param-label">🎺 Bass</div>
+                <div class="param-value" id="bassParam">0.0</div>
+            </div>
+            <div class="param-card">
+                <div class="param-label">✨ Brightness</div>
+                <div class="param-value" id="brightnessParam">0.0</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">EEG Signal (Channel 1)</div>
+                <canvas id="eegChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Brainwave Power Over Time</div>
+                <canvas id="powerChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isPlaying = false;
+        let samplesProcessed = 0;
+
+        // Initialize charts
+        const eegChart = new Chart(document.getElementById('eegChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'EEG Signal',
+                    data: [],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: false }
+                },
+                animation: { duration: 0 }
+            }
+        });
+
+        const powerChart = new Chart(document.getElementById('powerChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Alpha', data: [], borderColor: '#45B7D1', borderWidth: 2, tension: 0.4 },
+                    { label: 'Beta', data: [], borderColor: '#96CEB4', borderWidth: 2, tension: 0.4 },
+                    { label: 'Theta', data: [], borderColor: '#4ECDC4', borderWidth: 2, tension: 0.4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true, max: 1 }
+                },
+                animation: { duration: 0 }
+            }
+        });
+
+        // Update frequency display
+        document.getElementById('baseFreq').addEventListener('input', (e) => {
+            document.getElementById('freqValue').textContent = e.target.value + ' Hz';
+        });
+
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8765');
+            
+            ws.onopen = () => {
+                console.log('✅ WebSocket connected');
+                updateConnectionStatus(true);
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                updateDashboard(data);
+            };
+            
+            ws.onerror = (error) => {
+                console.error('❌ WebSocket error:', error);
+                updateConnectionStatus(false);
+            };
+            
+            ws.onclose = () => {
+                console.log('🔌 WebSocket disconnected');
+                updateConnectionStatus(false);
+                if (isPlaying) {
+                    setTimeout(connectWebSocket, 2000);
+                }
+            };
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusCard = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('connectionText');
+            
+            if (connected) {
+                statusCard.className = 'status-card connected';
+                statusText.textContent = 'Connected';
+            } else {
+                statusCard.className = 'status-card disconnected';
+                statusText.textContent = 'Disconnected';
+            }
+        }
+
+        function updateDashboard(data) {
+            // Update brainwave bars
+            if (data.band_powers) {
+                updateBrainwaveBars(data.band_powers);
+            }
+            
+            // Update music parameters
+            if (data.music_params) {
+                updateMusicParams(data.music_params);
+            }
+            
+            // Update EEG chart
+            if (data.eeg_sample) {
+                updateEEGChart(data.eeg_sample);
+            }
+            
+            // Update samples count
+            samplesProcessed++;
+            document.getElementById('samplesCount').textContent = samplesProcessed;
+        }
+
+        function updateBrainwaveBars(powers) {
+            const bands = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+            bands.forEach(band => {
+                const value = (powers[band] || 0) * 100;
+                document.getElementById(`${band}Bar`).style.height = `${value}%`;
+                document.getElementById(`${band}Value`).textContent = `${value.toFixed(1)}%`;
+            });
+        }
+
+        function updateMusicParams(params) {
+            document.getElementById('energyParam').textContent = params.energy.toFixed(2);
+            document.getElementById('melodyParam').textContent = params.melody_complexity.toFixed(2);
+            document.getElementById('tempoParam').textContent = Math.round(params.tempo) + ' BPM';
+            document.getElementById('bassParam').textContent = params.bass_level.toFixed(2);
+            document.getElementById('brightnessParam').textContent = params.brightness.toFixed(2);
+        }
+
+        function updateEEGChart(sample) {
+            if (eegChart.data.labels.length > 100) {
+                eegChart.data.labels.shift();
+                eegChart.data.datasets[0].data.shift();
+            }
+            
+            eegChart.data.labels.push(eegChart.data.labels.length);
+            eegChart.data.datasets[0].data.push(sample);
+            eegChart.update();
+        }
+
+        function startMusic() {
+            isPlaying = true;
+            document.getElementById('musicStatus').classList.add('playing');
+            document.getElementById('musicText').textContent = 'Playing';
+            
+            connectWebSocket();
+            
+            // Send start command (would need backend implementation)
+            console.log('🎵 Starting music generation...');
+        }
+
+        function stopMusic() {
+            isPlaying = false;
+            document.getElementById('musicStatus').classList.remove('playing');
+            document.getElementById('musicText').textContent = 'Stopped';
+            
+            if (ws) {
+                ws.close();
+            }
+            
+            console.log('⏹ Stopping music generation...');
+        }
+
+        function saveSession() {
+            const timestamp = new Date().toISOString();
+            console.log('💾 Saving session:', timestamp);
+            alert('Session data saved! (Feature to be implemented)');
+        }
+
+        // Auto-connect on load
+        // connectWebSocket();
+    </script>
+</body>
+</html>
